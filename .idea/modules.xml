@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/python.iml" filepath="$PROJECT_DIR$/.idea/python.iml" />
+      <module fileurl="file://$USER_HOME$/Desktop/sqlmapproject-sqlmap-3f1a8e8/.idea/sqlmapproject-sqlmap-3f1a8e8.iml" filepath="$USER_HOME$/Desktop/sqlmapproject-sqlmap-3f1a8e8/.idea/sqlmapproject-sqlmap-3f1a8e8.iml" />
+    </modules>
+  </component>
+</project>
