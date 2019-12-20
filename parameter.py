@@ -12,7 +12,7 @@ def parameter():
     jug = len(param)
     if jug < 2:
         return False
-    elif jug < 4 and jug > 2:
+    elif jug == 3:
         if param[1] == "-h":
             print("[*]**********************************************")
             print("[*]this is a short help for you")
@@ -30,9 +30,16 @@ def parameter():
             print("[*]**********************************************")
 
         elif param[1] == "-u":
-            return True
+            return "inject url"
 
         else:
             print("error input,check you parameter")
-    elif jug < 6 and jug >= 4:
-        if
+    elif jug == 4 and  param[1] == "-u" and param[3] == "-D":
+        return "inject db"
+    elif jug == 6 and  param[1] == "-u" and param[3] == "-D" and param[5] == "-T":
+        return  "inject table"
+    elif jug == 8 and param[1] == "-u" and param[3] == "-D" and param[5] == "-T" and param[7] == "-C":
+        return  "inject Cloumn"
+    elif jug == 10 and param[1] == "-u" and param[3] == "-D"  and param[5] == "-T" and param[7] == "-C" and param[9] =="--dump":
+        return dump
+#sqlmap.p -u url -D db -T a -C
