@@ -3,69 +3,54 @@ import wx
 import sys
 import os
 
-class MainWindow(wx.Frame):
-    def __init__(self,parent,title):
-        self.dirname = ''
-        wx.Frame.__init__(self, parent , title=title ,size =(200,-1) )
-        self.control = wx.TextCtrl(self,style = wx.TE_MULTILINE)
-        self.CreateStatusBar()
 
-        filemenu = wx.Menu()
+class MainWindow(wx.Panel):
+    def __init__(self, parent):
+        self.quote = wx.StaticText(self, label = 'your quote;', pos=(20,30))
+        self.logger = wx.TextCtrl(self, pos=(300,20),size=(200,300),style=wx.TE_MULTILINE| wx.TE_REA)
+        self.button = wx.Button(self,label='Save',pos=(200,325))
+        self.Bind(wx.EVT_BUTTON, self.OnClick, self.button)
 
-        menuOpen = filemenu.Append(wx.ID_OPEN,'&OEPN','OPEN A FILE')
-        menuAbout = filemenu.Append(wx.ID_ABORT,'&ABOUT','ABOUT THE EDITOR')
-        filemenu.AppendSeparator()
-        menuExit = filemenu.Append(wx.ID_EXIT, 'E&XIT',"EXIT THE PROGRAM")
+        self.lblname =wx.StaticText(self, laber='Your name:', pos=(20,60))
+        self.editname = wx.TextCtrl(self, value = 'Enter here your name:', pos=(150,60), size=(140,-1))
 
-        menuBar = wx.MenuBar()
-        menuBar.Append(filemenu,'&file')
-        self.SetMenuBar(menuBar)
+        self.Bind(wx.EVT_TEXT,self.EvtText, self.editname)
+        self.Bind(wx.EVT_CHAR, self.EvtChar, self.editname)
 
-        self.Bind(wx.EVT_MENU,self.OnOpen,menuOpen)
-        self.Bind(wx.EVT_MENU,self.OnAbout,menuAbout)
-        self.Bind(wx.EVT_MENU,self.OnExit,menuExit)
+        self.sampleList = ['friends', 'advertising', 'web search', 'Yellow Pages']
+        self.lblhear = wx.StaticText(self, label='Hwo did you here from me?',pos=(20, 90))
 
-        self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.buttons = []
-        for i in range(0,6):
-            self.buttons.append(wx.Button(self,-1,"Button &" + str(i)))
-            self.sizer2.Add(self.buttons[i],1,wx.SHAPED)
+        self.edithear = wx.ComboBox(self, pos=(150, 90), size=(95,-1), choices =self.sampleList, style=wx.CB_DROPDOWN)
 
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.control,1,wx.EXPAND)
-        self.sizer.Add(self.sizer2,0,wx.GROW)
+        self.insure = wx.CheckBox(self,label="Do you want Insured Shipment?",pos=(20,180))
+        self.Bind(wx.EVT_CHECKBOX, self.EvtCheckBox, self.insure)
 
-        self.SetSize(self.sizer)
-        self.SetAutoLayout(True)
-        self.sizer.Fit(self)
-        self.Show(True)
+        radioList = ['blue','red','yellow','orange','greeb','purple','navy blue','black','gray']
+        self.rb = wx.RadioBox(label="What color would you like?",pos=(20,210),choices=radioList,majorDimension=3,style=wx.RA_SPECIFY_COLS)
+        self.Bind(wx.EVT_RADIOBOX,self.EvtRadioBox,self.rb)
 
-    def OnAbout(self,e):
-        dlg = wx.MessageDialog(self,"a samll editor","small",wx.OK)
-        dlg.ShowModal()
-        dlg.Destroy()
+        def OnClick(self,event):
+            self.logger.AppendText('Click on object with id %d\n' % event.GetId())
 
-    def OnExit(self,e):
-        self.Close(True)
+        def EvtText(self,event):
+            self.logger.AppendText('EvtChar:%d\n' %event.GetKeyCode())
+            event.Skip()
 
-    def OnOpen(self,e):
-        dlg = wx.FileDialog(self,"Choose a file","","*.*",wx.OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.filename = dlg.GetFilename()
-            self.dirname = dlg.GetDirectory()
-            f = open(os.path.join(self.dirname,self.filename),'r')
-            self.control.SetValue(f.read())
-            f.close()
-        dlg.Destroy()
+        def EvtComboBox(self,event):
+            self.logger.AppendText('EvtComboBox:%s\n' % event.GetString())
 
+        def EvtCheckBox(self,event):
+            self.logger.AppendText('EvtCheckbox:%d\n' % event.Checked())
 
-
+        def EvtRadioBox(self,event):
+            self.logger.AppendText('EvtRadioBox:%d\n' % event.GetInt())
 def main():
     app = wx.App(False)
-    frame = MainWindow(None,'Samell editor')
+    frame = wx.Frame(None)
+    panel = MainWindow(frame)
+    frame.Show()
     app.MainLoop()
+
 
 if __name__ == '__main__':
     main()
-
-
