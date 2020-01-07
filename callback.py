@@ -1,9 +1,9 @@
 # -*-coding:utf-8-*-
 import requests
 import wx
-from wx import grid
+import wx.grid
 
-column_name = ['name', 'url', 'status']
+column_name = ['环境', '地址', '启动状态']
 
 
 def status():
@@ -22,7 +22,7 @@ def status():
         try:
             #      url=str(ip)+'/seeyon'
             url = 'http://%s/seeyon/main.do' % target_ip
-            req1 = requests.get(url=url, timeout=10)
+            req1 = requests.get(url=url, timeout=3)
 
             if req1.status_code == 200:
                 if 'localhost.log' in req1.text:
@@ -37,65 +37,55 @@ def status():
             something.append(False)
         except requests.exceptions.ConnectionError:
             something.append(False)
+        except requests.exceptions.ReadTimeout:
+            something.append(False)
         result.append(something)
     return result
 
 
-class MyGridTable(wx.grid.GridTableBase):
+result = status()
+
+
+class MyFrame(wx.Frame):
     def __init__(self):
-        super.__init__()
-        self.colLabels = column_name
-
-    def GetNumberRows(self):
-        return len(result)
-
-    def GetNumberCols(self):
-        return len(result[0])
-
-    def GetValue(self, row, col):
-        return result[row][col]
-
-    def GetColLabelValue(self, col):
-        return self.colLabels[col]
-
-
-class MyFrame(grid.PyGridTableBase):
-    print(result)
-
-    def __init__(self):
-        super().__init__(parent=None, title='statu check', size=(500, 500))
-        self.gridtable = MyGridTable()
-        self.Centre()
+        super().__init__(parent=None, title="环境状态启动检测", size=(-1,-1))
+        self.Center()
         self.grid = self.CreateGrid(self)
-        self.Bind(wx.grid.EVT_GRID_CMD_SELECT_CELL, self.OnClick, self.grid)
 
-    def OnClick(self, event):
-        print("row number:{0}".format(event.GetRow()))
-        print("column number:{0}".format(event.GetCol()))
-        print(result[event.GetRow()])
-        print(self.gridtable.GetValue(event.GetRow(), event.GetCol()))
-        event.Skip()
 
     def CreateGrid(self, parent):
         grid = wx.grid.Grid(parent)
-        grid.SetTable(self.gridtable, True)
-        grid.AutoSize()
+        grid.CreateGrid(len(column_name), len(result))
+        for i in range(len(column_name)):
+            grid.SetColLabelValue(i, column_name[i])
 
+        for r in range(len(result)):
+            for j in range(len(result[r])):
+                if result[r][j] is True:
+                    grid.SetCellValue(r, j, "On")
+                elif result[r][j] is False:
+                    grid.SetCellValue(r, j, "Off")
+                else:
+                    grid.SetCellValue(r, j, str(result[r][j]))
+        grid.SetBackgroundColour('red')
+        grid.AutoSize()
         return grid
-    #  for r in range(len(data)):
 
 
 class App(wx.App):
     def OnInit(self):
         frame = MyFrame()
+    #    frame.SetToolBar(wx.StaticText('this is frame'))
         frame.Show()
         return True
 
+    def OnExit(self):
+        print("exit")
+        return 0
+
 
 def main():
-    global result
-    result = status()
-    app = App()
+    app = App(wx.App)
     app.MainLoop()
 
 
