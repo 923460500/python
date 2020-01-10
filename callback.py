@@ -2,8 +2,23 @@
 import requests
 import wx
 import wx.grid
+import time
+import threading
+from threading import Thread
+
 
 column_name = ['环境', '地址', '启动状态']
+
+
+def MyThread(Thread):
+    def __init__(self,func,args,name=''):
+        Thread.__init__(self)
+        self.name=name
+        self.func=func
+        self.args=args
+
+
+
 
 
 def OpenTxt():
@@ -29,35 +44,41 @@ def CreatValue():
     return word
 
 
+def check(target_ip, something, ip):
+    try:
+        #      url=str(ip)+'/seeyon'
+        url = 'http://%s/seeyon/main.do' % target_ip
+        req1 = requests.get(url=url, timeout=2)
+
+        if req1.status_code == 200:
+            if 'localhost.log' in req1.text:
+                something.append(False)
+            else:
+                something.append(True)
+        elif req1.status_code == 403:
+            something.append(False)
+        elif req1.status_code == 404:
+            something.append(False)
+    except requests.exceptions.ConnectTimeout:
+        something.append(False)
+    except requests.exceptions.ConnectionError:
+        something.append(False)
+    except requests.exceptions.ReadTimeout:
+        something.append(False)
+    except requests.exceptions:
+        something.append(False)
+    return something
+
+
 def status():
     result = []
+    threadlist=[]
     count = 0
     for ip in ips:
         something = ip.split()
         target_ip = something[1]
-        try:
-            #      url=str(ip)+'/seeyon'
-            url = 'http://%s/seeyon/main.do' % target_ip
-            req1 = requests.get(url=url, timeout=2)
-
-            if req1.status_code == 200:
-                if 'localhost.log' in req1.text:
-                    something.append(False)
-                else:
-                    something.append(True)
-            elif req1.status_code == 403:
-                something.append(False)
-            elif req1.status_code == 404:
-                something.append(False)
-        except requests.exceptions.ConnectTimeout:
-            something.append(False)
-        except requests.exceptions.ConnectionError:
-            something.append(False)
-        except requests.exceptions.ReadTimeout:
-            something.append(False)
-        except requests.exceptions:
-            something.append(False)
-        result.append(something)
+        t = Thread(target=check(),args=(target_ip,something,ip,))
+        threadlist.append(t)
     return result
 
 
@@ -86,11 +107,13 @@ class MyFrame(wx.Frame):
             for l in range(len(word[0])):
                 grid.SetCellValue(j, l, str(word[j][l]))
         grid.AutoSize()
-        return  grid
+        return grid
 
     def CreateGrid(self, parent):
         result = status()
         grid = wx.grid.Grid(parent, pos=(0, 30))
+        grid.ClearGrid()
+        time.sleep(4)
         grid.CreateGrid(len(result), len(column_name))
         for i in range(len(column_name)):
             grid.SetColLabelValue(i, column_name[i])
@@ -98,7 +121,7 @@ class MyFrame(wx.Frame):
             for l in range(len(result[0])):
                 if result[j][l] is True:
                     grid.SetCellValue(j, l, "On")
-                elif result[j][l] is    False:
+                elif result[j][l] is False:
                     grid.SetCellValue(j, l, "Off")
                 else:
                     grid.SetCellValue(j, l, str(result[j][l]))
@@ -109,7 +132,7 @@ class MyFrame(wx.Frame):
 class App(wx.App):
     def OnInit(self):
         frame = MyFrame()
-      #      frame.SetToolBar(wx.StaticText('this is frame'))
+        #      frame.SetToolBar(wx.StaticText('this is frame'))
         frame.Show()
         return True
 
