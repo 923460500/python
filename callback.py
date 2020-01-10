@@ -6,19 +6,22 @@ import time
 import threading
 from threading import Thread
 
-
 column_name = ['环境', '地址', '启动状态']
 
 
 def MyThread(Thread):
-    def __init__(self,func,args,name=''):
+    def __init__(self, target_ip, something, ip):
         Thread.__init__(self)
-        self.name=name
-        self.func=func
-        self.args=args
+        self.target_ip = target_ip
+        self.something = something
+        self.ip = ip
+        self.result = self.func(*self.args)
 
-
-
+    def get_result(self):
+        try:
+            return self.result
+        except Exception:
+            return None
 
 
 def OpenTxt():
@@ -72,13 +75,17 @@ def check(target_ip, something, ip):
 
 def status():
     result = []
-    threadlist=[]
+    threadlist = []
     count = 0
     for ip in ips:
         something = ip.split()
         target_ip = something[1]
-        t = Thread(target=check(),args=(target_ip,something,ip,))
+        t = MyThread(target=check, args=(target_ip, something, ip,))
         threadlist.append(t)
+    for i in threadlist:
+        i.start()
+        i.join()
+        print(i.get_result)
     return result
 
 
@@ -114,7 +121,7 @@ class MyFrame(wx.Frame):
         grid = wx.grid.Grid(parent, pos=(0, 30))
         grid.ClearGrid()
         time.sleep(4)
-        grid.CreateGrid(len(result), len(column_name))
+        #grid.CreateGrid(len(result), len(column_name))
         for i in range(len(column_name)):
             grid.SetColLabelValue(i, column_name[i])
         for j in range(len(result)):
