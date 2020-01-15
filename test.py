@@ -1,46 +1,131 @@
-#!/usr/bin/env python
+# -*-coding:utf-8-*-
+import requests
 import wx
-import random
+import wx.grid
+import datetime
+
+column_name = ['环境', '地址', '启动状态']
 
 
-class MouseEventFrame(wx.Frame):
-    def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id, 'Frame With Button', size=(300, 100))
-        self.panel = wx.Panel(self)
-        self.button = wx.Button(self.panel, label="Not Over", pos=(100, 15))
-        self.Bind(wx.EVT_BUTTON, self.OnButtonClick, self.button)
-        self.button.Bind(wx.EVT_ENTER_WINDOW, self.OnEnterWindow)
-        self.button.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
+def OpenTxt():
+    try:
+        with open('test.txt', 'r', encoding='utf-8') as fp:
+            ips = fp.readlines()
+    except FileNotFoundError:
+        print('url.txt文件不存在')
+    except LookupError:
+        print('错误的编码，推荐使用utf-8')
+    return ips
 
-    def OnButtonClick(self, event):
-        '''''
-        两个交替变换的颜色
-        '''
-        # if self.panel.BackgroundColour == 'Green':
-        #    self.panel.SetBackgroundColour('Red')
-        # else:
-        #    self.panel.SetBackgroundColour('Green')
-        ''''' 
-        多个随机选择的颜色 
-        '''
-        # self.panel.SetBackgroundColour(random.choice(['Green','Yellow','Grey','Red','White','Black']))
-        ''''' 
-        随机选择所有颜色 
-        '''
-        self.panel.SetBackgroundColour((random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
-        self.panel.Refresh()
 
-    def OnEnterWindow(self, event):
-        self.button.SetLabel("Over Me!")
-        event.Skip()
+ips = OpenTxt()
 
-    def OnLeaveWindow(self, event):
-        self.button.SetLabel("Not Over")
-        event.Skip()
+
+def CreatValue():
+    word = []
+    for i in ips:
+        something = i.split()
+        something.append("ready for checking")
+        word.append(something)
+    return word
+
+
+def status():
+    result = []
+    count = 0
+    for ip in ips:
+        something = ip.split()
+        target_ip = something[1]
+        try:
+            #      url=str(ip)+'/seeyon'
+            url = 'http://%s/seeyon/main.do' % target_ip
+            req1 = requests.get(url=url, timeout=2)
+
+            if req1.status_code == 200:
+                if 'localhost.log' in req1.text:
+                    something.append(False)
+                else:
+                    something.append(True)
+            elif req1.status_code == 403:
+                something.append(False)
+            elif req1.status_code == 404:
+                something.append(False)
+        except requests.exceptions.ConnectTimeout:
+            something.append(False)
+        except requests.exceptions.ConnectionError:
+            something.append(False)
+        except requests.exceptions.ReadTimeout:
+            something.append(False)
+        except requests.exceptions:
+            something.append(False)
+        result.append(something)
+    return result
+
+
+class MyFrame(wx.Frame):
+    def __init__(self):
+        super().__init__(parent=None, title="环境状态启动检测", size=(500, 500))
+        self.Center()
+        panel = wx.Panel(parent=self, size=(500, 500))
+        self.CreateStatusBar()
+        self.button = wx.Button(panel, -1, label="start", pos=(0, 0))
+
+        self.grid = self.SimpleGrid(self)
+        self.Bind(wx.EVT_BUTTON, self.OnStart, self.button)
+
+    def OnStart(self, evt):
+        self.grid.ClearGrid()
+        self.grid = self.CreateGrid(self)
+
+    def SimpleGrid(self, parent):
+        word = CreatValue()
+        grid = wx.grid.Grid(parent, pos=(0, 30))
+        grid.CreateGrid(len(word), len(column_name))
+        for i in range(len(column_name)):
+            grid.SetColLabelValue(i, column_name[i])
+        for j in range(len(word)):
+            for l in range(len(word[0])):
+                grid.SetCellValue(j, l, str(word[j][l]))
+        grid.AutoSize()
+        return  grid
+
+    def CreateGrid(self, parent):
+        start = datetime.datetime.now()
+        result = status()
+        end = datetime.datetime.now()
+        print("total time: %s " % (end - start))
+        grid = wx.grid.Grid(parent, pos=(0, 30))
+        grid.CreateGrid(len(result), len(column_name))
+        for i in range(len(column_name)):
+            grid.SetColLabelValue(i, column_name[i])
+        for j in range(len(result)):
+            for l in range(len(result[0])):
+                if result[j][l] is True:
+                    grid.SetCellValue(j, l, "On")
+                elif result[j][l] is    False:
+                    grid.SetCellValue(j, l, "Off")
+                else:
+                    grid.SetCellValue(j, l, str(result[j][l]))
+        grid.AutoSize()
+        return grid
+
+
+class App(wx.App):
+    def OnInit(self):
+        frame = MyFrame()
+      #      frame.SetToolBar(wx.StaticText('this is frame'))
+        frame.Show()
+        return True
+
+
+def main():
+    start = datetime.datetime.now()
+    app = App(wx.App)
+    app.MainLoop()
+    CreatValue()
+    end = datetime.datetime.now()
+    print("total time: %s " %(end - start))
 
 
 if __name__ == '__main__':
-    app = wx.PySimpleApp()
-    frame = MouseEventFrame(parent=None, id=-1)
-    frame.Show()
-    app.MainLoop()
+    main()

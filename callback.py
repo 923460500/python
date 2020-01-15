@@ -4,22 +4,26 @@ import wx
 import wx.grid
 import time
 import threading
-from threading import Thread
+import datetime
+import os
+
+from click import pause
 
 column_name = ['环境', '地址', '启动状态']
 
 
-def MyThread(Thread):
+class MyThread(threading.Thread):
     def __init__(self, target_ip, something, ip):
-        Thread.__init__(self)
+        threading.Thread.__init__(self)
         self.target_ip = target_ip
         self.something = something
         self.ip = ip
-        self.result = self.func(*self.args)
+
 
     def get_result(self):
         try:
-            return self.result
+            test = check(self.target_ip,self.something,self.ip)
+            return test
         except Exception:
             return None
 
@@ -30,8 +34,10 @@ def OpenTxt():
             ips = fp.readlines()
     except FileNotFoundError:
         print('url.txt文件不存在')
+        os.system("pause")
     except LookupError:
         print('错误的编码，推荐使用utf-8')
+        os.system("pause")
     return ips
 
 
@@ -80,12 +86,12 @@ def status():
     for ip in ips:
         something = ip.split()
         target_ip = something[1]
-        t = MyThread(target=check, args=(target_ip, something, ip,))
+        t = MyThread(target_ip, something, ip,)
         threadlist.append(t)
     for i in threadlist:
         i.start()
         i.join()
-        print(i.get_result)
+        result.append(i.get_result())
     return result
 
 
@@ -120,8 +126,7 @@ class MyFrame(wx.Frame):
         result = status()
         grid = wx.grid.Grid(parent, pos=(0, 30))
         grid.ClearGrid()
-        time.sleep(4)
-        #grid.CreateGrid(len(result), len(column_name))
+        grid.CreateGrid(len(result), len(column_name))
         for i in range(len(column_name)):
             grid.SetColLabelValue(i, column_name[i])
         for j in range(len(result)):
@@ -147,7 +152,7 @@ class App(wx.App):
 def main():
     app = App(wx.App)
     app.MainLoop()
-    CreatValue()
+
 
 
 if __name__ == '__main__':
