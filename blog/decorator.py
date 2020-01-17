@@ -1,27 +1,34 @@
 # coding:utf-8
 
-import datetime
 import time
 
 
 def sum(p):
     def wrapper():
-        starttime = datetime.datetime.now()
+        print("sum")
         p()
-        endtime = datetime.datetime.now()
-        print("total time:  ",(endtime-starttime))
-    return  wrapper
+
+    return wrapper
+
+
+def sum1(p):
+    def wrapper():
+        print("sum1")
+        p()
+
+    return wrapper
+
 
 @sum
+@sum1
 def decorator():
-    print("hello")
+    print("start...")
     time.sleep(1)
-    print("goodbye")
+    print("end...")
 
 
 def main():
-    f=decorator()
-
+    decorator()
 
 
 if __name__ == '__main__':
