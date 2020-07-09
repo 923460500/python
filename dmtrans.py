@@ -5,9 +5,13 @@ import os
 
 all_dir = sys.argv[1]
 upgrade_dir = sys.argv[2]
+ci_dir = "/home/CI/jenkins/jobs/v5-ddl-new/workspace/DDL/DDL/"
+dm_alter_file = "UPDATE_DM.SQL"
+kingbase_alter_file = "UPDATE_KingBase.SQL"
 # all_dir = "C:\\Users\\Administrator\\Desktop\\sql\\"
 # upgrade_dir = "C:\\Users\\Administrator\\Desktop\\sql\\"
 # oracle特殊字符
+print(all_dir)
 oracle_special_string = ["ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS';",
                          "ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS.FF';", "commit"]
 # postgresql特殊字符
@@ -72,6 +76,8 @@ def multiple_replace(text):
     rx = strinfo.sub("TIMESTAMP,", rx)
     strinfo = re.compile("DATE {1,30}NOT NULL,$")
     rx = strinfo.sub("TIMESTAMP    NOT NULL,", rx)
+    strinfo = re.compile("DATE {1,30}DEFAULT NULL,$")
+    rx = strinfo.sub("TIMESTAMP  DEFAULT NULL,")
     return rx
 
 
@@ -100,11 +106,17 @@ class all_in_one:
                     else:
                         dm_string.append(strip_string)
             try:
+                with open(ci_dir + dm_alter_file,"r",encoding="UTF-8") as dm_fp:
+                    for y in dm_fp.readlines():
+                        dm_string(y.strip("\n\t"))
+            except FileNotFoundError:
+                pass
+            try:
                 with open(all_dir + target_file, "w", encoding="UTF-8") as fp:
                     for x in dm_string:
                         fp.write(x + "\n")
-            except FileNotFoundError:
-                print("no")
+            except:
+                print(target_file + "create failure")
 
     def kingbase_read_file(self):
         postgresql_file = ["A8-2_ALL_IN_ONE_POSTGRESQL.SQL", "A8-1_ALL_IN_ONE_POSTGRESQL.SQL"]
@@ -131,11 +143,18 @@ class all_in_one:
                         kingbase_string.append(strip_string)
             kingbase_string = kingbase_string + postgresql_anywhere_string
             try:
+                with open(ci_dir + kingbase_alter_file,"r",encoding="UTF-8") as kb_fp:
+                    for y in kb_fp.readlines():
+                        kingbase_string.append(y.strip("\n\t"))
+            except FileNotFoundError:
+                pass
+            try:
                 with open(all_dir + target_file, "w", encoding="UTF-8") as fp:
                     for x in kingbase_string:
                         fp.write(x + "\n")
-            except FileNotFoundError:
-                print("no")
+            except:
+                print(target_file + "create failure")
+
 
 
 class upgrade:
@@ -150,10 +169,13 @@ class upgrade:
             version = j.split("_")[-1]  # 获取对应的版本号
             target_file = "Kingbase_9_Z_V80_TO_V80SP1_" + version  # 写入目标文件
             print(target_file)
-            with open(upgrade_dir + j, "r", encoding="UTF-8") as fp:  # 打开对应的postgresql SQL
-                with open(upgrade_dir + target_file, "w", encoding="UTF-8") as kb_fp:  # 打开需要写入的kingbase文件
-                    for k in fp.readlines():  # 逐行写入
-                        kb_fp.write(k)
+            try:
+                with open(upgrade_dir + j, "r", encoding="UTF-8") as fp:  # 打开对应的postgresql SQL
+                    with open(upgrade_dir + target_file, "w", encoding="UTF-8") as kb_fp:  # 打开需要写入的kingbase文件
+                        for k in fp.readlines():  # 逐行写入
+                            kb_fp.write(k)
+            except:
+                print(target_file + "create failure")
 
     def dm_upgrade(self):
         dm_file = ["Oracle_9_Z_V80_TO_V80SP1_A8-1.SQL", "Oracle_9_Z_V80_TO_V80SP1_A8-2.SQL"]
@@ -165,10 +187,13 @@ class upgrade:
             version = j.split("_")[-1]  # 获取对应的版本号
             target_file = "Dm_9_Z_V80_TO_V80SP1_" + version  # 写入目标文件
             print(target_file)
-            with open(upgrade_dir + j, "r", encoding="UTF-8") as fp:  # 打开对应的postgresql SQL
-                with open(upgrade_dir + target_file, "w", encoding="UTF-8") as kb_fp:  # 打开需要写入的kingbase文件
-                    for k in fp.readlines():  # 逐行写入
-                        kb_fp.write(multiple_replace(k))
+            try:
+                with open(upgrade_dir + j, "r", encoding="UTF-8") as fp:  # 打开对应的postgresql SQL
+                    with open(upgrade_dir + target_file, "w", encoding="UTF-8") as kb_fp:  # 打开需要写入的kingbase文件
+                        for k in fp.readlines():  # 逐行写入
+                            kb_fp.write(multiple_replace(k))
+            except:
+                print(target_file + "create failure")
 
 
 def main():

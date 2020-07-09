@@ -1,5 +1,4 @@
 # coding:utf-8
 
-a = ["a","b"]
-c = ["d","c"]
-print(a+c)
+print("ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS';\nALTER SESSION SET "
+                     "NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS.FF';" + "\n")
