@@ -12,12 +12,14 @@ conn = pymysql.connect(
 
 cursor = conn.cursor()
 sql = '''
-    select * from ctp_config;
+    select version();
 '''
 
-res = cursor.execute(sql)
+cursor.execute(sql)
 
-print(res.)
+res = cursor.fetchall()
+
+print(res)
 
 cursor.close()
 

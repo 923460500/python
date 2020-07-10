@@ -1,4 +1,5 @@
 # coding:utf-8
 
-print("ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS';\nALTER SESSION SET "
-                     "NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS.FF';" + "\n")
+a = "-- 以下需在产品的所有SQL后执行"
+if "-- 以下需在产品的所有SQL后执行" in a:
+    print("yes")

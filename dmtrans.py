@@ -6,8 +6,8 @@ import os
 all_dir = sys.argv[1]
 upgrade_dir = sys.argv[2]
 ci_dir = "/home/CI/jenkins/jobs/v5-ddl-new/workspace/DDL/DDL/"
-dm_alter_file = "UPDATE_DM.SQL"
-kingbase_alter_file = "UPDATE_KingBase.SQL"
+dm_alter_file = "ALTER_DM.SQL"
+kingbase_alter_file = "ALTER_KingBase.SQL"
 # all_dir = "C:\\Users\\Administrator\\Desktop\\sql\\"
 # upgrade_dir = "C:\\Users\\Administrator\\Desktop\\sql\\"
 # oracle特殊字符
@@ -67,22 +67,22 @@ def multiple_replace(text):
     strinfo = re.compile("DATE;$")
     rx = strinfo.sub("TIMESTAMP;", rx)
     strinfo = re.compile("NUMBER\(4\)")
-    rx = strinfo.sub("SMALLINT;", rx)
+    rx = strinfo.sub("SMALLINT", rx)
     strinfo = re.compile("NUMBER\(19\)")
-    rx = strinfo.sub("BIGINT;", rx)
+    rx = strinfo.sub("BIGINT", rx)
     strinfo = re.compile("NUMERIC\(19,0\)")
-    rx = strinfo.sub("BIGINT;", rx)
+    rx = strinfo.sub("BIGINT", rx)
     strinfo = re.compile("DATE,$")
     rx = strinfo.sub("TIMESTAMP,", rx)
     strinfo = re.compile("DATE {1,30}NOT NULL,$")
     rx = strinfo.sub("TIMESTAMP    NOT NULL,", rx)
     strinfo = re.compile("DATE {1,30}DEFAULT NULL,$")
-    rx = strinfo.sub("TIMESTAMP  DEFAULT NULL,")
+    rx = strinfo.sub("TIMESTAMP  DEFAULT NULL,",rx)
     return rx
 
 
 class all_in_one:
-    def dm_read_file(self):
+    def dm_read_file(self):             # 达梦ALL_IN_ONE生成
         # SQL文件路径
         # all_dir = sys.argv[1]
         # oracle文件名称
@@ -94,8 +94,11 @@ class all_in_one:
                 exists_sql.append(i)
 
         for j in exists_sql:
-            version = j.split("_")[0]  # 获取对应的版本号
-            target_file = version + "N_ALL_IN_ONE_" + "DM" + ".SQL"  # 写入目标文件
+            if j.split("_")[0] == "A8-2":        # 获取对应的版本号,默认不是A8-2就是A8-1
+                version = "A8N-2"
+            else:
+                version = "A8N-1"
+            target_file = version + "_ALL_IN_ONE_" + "DM" + ".SQL"  # 写入目标文件
             print(target_file)
             dm_string = []
             with open(all_dir + j, "r", encoding="UTF-8") as fp:
@@ -108,7 +111,7 @@ class all_in_one:
             try:
                 with open(ci_dir + dm_alter_file,"r",encoding="UTF-8") as dm_fp:
                     for y in dm_fp.readlines():
-                        dm_string(y.strip("\n\t"))
+                        dm_string.append(y.strip("\n\t"))
             except FileNotFoundError:
                 pass
             try:
@@ -118,17 +121,21 @@ class all_in_one:
             except:
                 print(target_file + "create failure")
 
-    def kingbase_read_file(self):
+    def kingbase_read_file(self):               # 人大金仓ALL_IN_ONE生成
         postgresql_file = ["A8-2_ALL_IN_ONE_POSTGRESQL.SQL", "A8-1_ALL_IN_ONE_POSTGRESQL.SQL"]
         exists_sql = []
         for i in postgresql_file:
             #        print(all_dir+i)
             if os.path.exists(all_dir + i):  # 获取存在的SQL文件
                 exists_sql.append(i)
-        flag = 0
         for j in exists_sql:
-            version = j.split("_")[0]  # 获取对应的版本号
-            target_file = version + "N_ALL_IN_ONE_" + "KINGBASE" + ".SQL"  # 写入目标文件
+            write_sql = 0
+            flag = 0
+            if j.split("_")[0] == "A8-2":        # 获取对应的版本号,默认不是A8-2就是A8-1
+                version = "A8N-2"
+            else:
+                version = "A8N-1"
+            target_file = version + "_ALL_IN_ONE_" + "KINGBASE" + ".SQL"  # 写入目标文件
             print(target_file)
             kingbase_string = []
             with open(all_dir + j, "r", encoding="UTF-8") as fp:
@@ -136,8 +143,8 @@ class all_in_one:
                     strip_string = k.strip("\n\t")
                     if strip_string in postgresql_special_string:
                         continue
-                    elif "CREATE INDEX" in strip_string and flag == 0:
-                        flag = 1
+                    elif "CREATE INDEX" in strip_string and flag == 0:              # create table后添加字符
+                        flag = 1                                # 防止多次写入
                         kingbase_string = kingbase_string + postgresql_after_create_string
                     else:
                         kingbase_string.append(strip_string)
@@ -145,9 +152,16 @@ class all_in_one:
             try:
                 with open(ci_dir + kingbase_alter_file,"r",encoding="UTF-8") as kb_fp:
                     for y in kb_fp.readlines():
-                        kingbase_string.append(y.strip("\n\t"))
+                        if y.strip("\n\t") in "-- 以下需在产品的所有SQL后执行":                 # 读取ALTET_KingBase.SQL文件
+                            write_sql = 1
+                            kingbase_string.append(y.strip("\n\t"))
+                        elif write_sql == 1:
+                            kingbase_string.append(y.strip("\n\t"))
+                        else:
+                            continue
             except FileNotFoundError:
                 pass
+
             try:
                 with open(all_dir + target_file, "w", encoding="UTF-8") as fp:
                     for x in kingbase_string:
@@ -166,7 +180,10 @@ class upgrade:
             if os.path.exists(upgrade_dir + i):  # 获取存在的SQL文件
                 exists_sql.append(i)
         for j in exists_sql:  # 挨个读取
-            version = j.split("_")[-1]  # 获取对应的版本号
+            if j.split("_")[-1] in "A8-1.SQL":          # 获取版本号
+                version = "A8N-1.SQL"
+            else:
+                version = "A8N-2.SQL"
             target_file = "Kingbase_9_Z_V80_TO_V80SP1_" + version  # 写入目标文件
             print(target_file)
             try:
@@ -184,7 +201,10 @@ class upgrade:
             if os.path.exists(upgrade_dir + i):  # 获取存在的SQL文件
                 exists_sql.append(i)
         for j in exists_sql:  # 挨个读取
-            version = j.split("_")[-1]  # 获取对应的版本号
+            if j.split("_")[-1] in "A8-1.SQL":  # 获取版本号
+                version = "A8N-1.SQL"
+            else:
+                version = "A8N-2.SQL"
             target_file = "Dm_9_Z_V80_TO_V80SP1_" + version  # 写入目标文件
             print(target_file)
             try:
