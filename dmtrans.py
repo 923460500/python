@@ -152,7 +152,7 @@ class all_in_one:
             try:
                 with open(ci_dir + kingbase_alter_file,"r",encoding="UTF-8") as kb_fp:
                     for y in kb_fp.readlines():
-                        if y.strip("\n\t") in "-- 以下需在产品的所有SQL后执行":                 # 读取ALTET_KingBase.SQL文件
+                        if y.strip("\n\t") == "-- 以下需在产品的所有SQL后执行":                 # 读取ALTET_KingBase.SQL文件
                             write_sql = 1
                             kingbase_string.append(y.strip("\n\t"))
                         elif write_sql == 1:
