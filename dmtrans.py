@@ -62,8 +62,10 @@ postgresql_after_create_string = [
 
 # 数据库脚本语言替换。
 def multiple_replace(text):
-    strinfo = re.compile("INTEGER")
-    rx = strinfo.sub("BIGINT", text)
+    strinfo = re.compile("INTEGER,")
+    rx = strinfo.sub("BIGINT,", text)
+    strinfo = re.compile("INTEGER {1,30}NOT NULL,")
+    rx = strinfo.sub("BIGINT NOT NULL,")
     strinfo = re.compile("DATE;$")
     rx = strinfo.sub("TIMESTAMP;", rx)
     strinfo = re.compile("NUMBER\(4\)")
