@@ -3,15 +3,15 @@ import re
 import sys
 import os
 
-all_dir = sys.argv[1]
-upgrade_dir = sys.argv[2]
+#all_dir = sys.argv[1]
+#upgrade_dir = sys.argv[2]
 ci_dir = "/home/CI/jenkins/jobs/v5-ddl-new/workspace/DDL/DDL/"
 dm_alter_file = "ALTER_DM.SQL"
 kingbase_alter_file = "ALTER_KingBase.SQL"
 # all_dir = "C:\\Users\\Administrator\\Desktop\\sql\\"
 # upgrade_dir = "C:\\Users\\Administrator\\Desktop\\sql\\"
 # oracle特殊字符
-print(all_dir)
+#print(all_dir)
 oracle_special_string = ["ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS';",
                          "ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS.FF';", "commit"]
 # postgresql特殊字符
@@ -64,8 +64,28 @@ postgresql_after_create_string = [
 def multiple_replace(text):
     strinfo = re.compile("INTEGER,")
     rx = strinfo.sub("BIGINT,", text)
+    strinfo = re.compile("INTEGER;")
+    rx = strinfo.sub("BIGINT;", rx)
     strinfo = re.compile("INTEGER {1,30}NOT NULL,")
-    rx = strinfo.sub("BIGINT NOT NULL,")
+    rx = strinfo.sub("BIGINT NOT NULL,",rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT {1,30}NULL,")
+    rx = strinfo.sub("BIGINT       DEFAULT NULL,",rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT {1,30}-1,")
+    rx = strinfo.sub("BIGINT       DEFAULT -1,", rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT {1,30}1,")
+    rx = strinfo.sub("BIGINT       DEFAULT 1,", rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT {1,30}0,")
+    rx = strinfo.sub("BIGINT       DEFAULT 0,", rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT 1 NOT NULL,")
+    rx = strinfo.sub("BIGINT       DEFAULT 1 NOT NULL,", rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT 0 NOT NULL,")
+    rx = strinfo.sub("BIGINT       DEFAULT 0 NOT NULL,", rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT -1 NOT NULL,")
+    rx = strinfo.sub("BIGINT       DEFAULT -1 NOT NULL,", rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT 100,")
+    rx = strinfo.sub("BIGINT       DEFAULT 100,", rx)
+    strinfo = re.compile("INTEGER {1,30}DEFAULT 4,")
+    rx = strinfo.sub("BIGINT       DEFAULT 4,", rx)
     strinfo = re.compile("DATE;$")
     rx = strinfo.sub("TIMESTAMP;", rx)
     strinfo = re.compile("NUMBER\(4\)")
@@ -217,6 +237,16 @@ class upgrade:
             except:
                 print(target_file + "create failure")
 
+def test():
+    a='''
+    '''
+    with open("test.sql", "a",encoding="UTF-8") as fp:
+        for i in a.split("\n"):
+            x = multiple_replace(i)
+            fp.write(x+"\n")
+            if "INTEGER" in x:
+                print(x)
+
 
 def main():
     allinone = all_in_one()
@@ -228,4 +258,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    test()
